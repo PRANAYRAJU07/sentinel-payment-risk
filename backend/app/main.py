@@ -12,6 +12,7 @@ from fastapi.exceptions import RequestValidationError
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.core.database import get_db_engine, Base
+import app.models  # noqa: F401 — registers all models with SQLAlchemy metadata
 from app.core.errors import (
     validation_exception_handler,
     generic_exception_handler,
