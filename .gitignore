@@ -1,0 +1,129 @@
+# ============================================================
+# SENTINEL — .gitignore
+# ============================================================
+
+# ----------------------------
+# SECRETS — NEVER COMMIT THESE
+# ----------------------------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# ----------------------------
+# Python
+# ----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.log
+
+# ----------------------------
+# ML Datasets (NEVER commit)
+# ----------------------------
+ml/data/raw/
+ml/data/processed/
+ml/data/external/
+*.csv
+*.parquet
+*.feather
+*.arrow
+*.pkl
+*.joblib
+!ml/models/.gitkeep
+!ml/data/.gitkeep
+
+# ----------------------------
+# ML Model Artifacts (large)
+# ----------------------------
+ml/models/*.pkl
+ml/models/*.joblib
+ml/models/*.bin
+ml/models/*.onnx
+
+# ----------------------------
+# Generated Reports
+# ----------------------------
+ml/reports/*.html
+ml/reports/*.json
+!ml/reports/.gitkeep
+
+# ----------------------------
+# Node / Frontend
+# ----------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# ----------------------------
+# Docker
+# ----------------------------
+.docker/
+
+# ----------------------------
+# OS
+# ----------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----------------------------
+# IDE
+# ----------------------------
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# ----------------------------
+# Jupyter
+# ----------------------------
+.ipynb_checkpoints/
+
+# ----------------------------
+# Kaggle
+# ----------------------------
+~/.kaggle/kaggle.json
+kaggle.json
