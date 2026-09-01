@@ -348,7 +348,7 @@ class TestWithRealDataset:
             pytest.skip("Metadata not generated yet")
         content = meta.read_text()
         import re
-        tokens = re.findall(r"[a-f0-9]{32}", content)
+        tokens = re.findall(r"\b[a-f0-9]{32}\b", content)
         # Allow SHA256 checksums (64 chars) but not 32-char API tokens
         assert tokens == [], f"Possible credential in metadata: {tokens[:1]}"
 

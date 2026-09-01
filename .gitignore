@@ -127,3 +127,5 @@ desktop.ini
 # ----------------------------
 ~/.kaggle/kaggle.json
 kaggle.json
+
+ml/reports/figures/
