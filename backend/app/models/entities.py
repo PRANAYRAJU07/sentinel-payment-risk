@@ -3,7 +3,7 @@ Sentinel — Database Models: Customers/Users
 """
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, DateTime, Boolean, Integer, Float, Text, ForeignKey
+from sqlalchemy import String, DateTime, Boolean, Integer, Float, Text, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -78,3 +78,23 @@ class IpAddress(Base):
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+class BehaviorProfile(Base):
+    """
+    Persistent behavioral baseline for an entity.
+    """
+    __tablename__ = "behavior_profiles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    entity_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    profile_version: Mapped[str] = mapped_column(String(50))
+    profile_status: Mapped[str] = mapped_column(String(50)) # ESTABLISHED, INSUFFICIENT_HISTORY
+    
+    # Store aggregated baseline stats (mean, std, percentiles, typical hours, etc.)
+    profile_data: Mapped[dict | None] = mapped_column(JSON)
+    
+    transaction_count: Mapped[int] = mapped_column(Integer, default=0)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+

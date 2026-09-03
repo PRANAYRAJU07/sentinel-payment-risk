@@ -80,7 +80,7 @@ class RiskEngineOrchestrator:
                 logger.error(f"ML Predictor failed: {e}")
 
         # 2. Behavioral Signal
-        beh_res = self.behavioral_engine.evaluate(transaction)
+        beh_res = await self.behavioral_engine.evaluate(transaction, db)
 
         # 3. Rule Signal
         rule_res = self.rule_engine.evaluate(transaction)

@@ -11,3 +11,7 @@ It is separated into multiple deterministic components to decouple signals:
 5. **Decision Engine**: Normalizes available scores, aggregates via weighted config, applies explicitly defined overrides, and issues a final `APPROVE`, `REVIEW`, or `HOLD`.
 
 Every decision emits a comprehensive, JSON-serializable trace and writes an immutable `AuditLog`.
+
+
+### Phase 8: Behavioral Anomaly Engine
+Introduced the persistent behavioral profile storage (`BehaviorProfile`) tracking metrics like average amounts, standard deviations, typical active hours, daily transaction velocities, and historic failure rates. This layer operates completely decoupled from the ML models to detect behavioral drift without fabricating PII-linked dependencies in the Kaggle dataset.
