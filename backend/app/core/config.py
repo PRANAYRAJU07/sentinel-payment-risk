@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     # Risk Policy Thresholds (configurable)
     risk_low_threshold: int = 40
     risk_high_threshold: int = 75
+    
+    # Risk Aggregation Weights
+    risk_ml_weight: float = 0.60
+    risk_behavior_weight: float = 0.20
+    risk_rule_weight: float = 0.15
+    risk_graph_weight: float = 0.05
 
     @property
     def allowed_origins_list(self) -> List[str]:

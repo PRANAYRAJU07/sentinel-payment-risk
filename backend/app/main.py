@@ -20,6 +20,7 @@ from app.core.errors import (
     SentinelException,
 )
 from app.api.health import router as health_router
+from app.api.endpoints.risk import router as risk_router
 
 # Configure logging before anything else
 configure_logging()
@@ -117,6 +118,7 @@ def create_app() -> FastAPI:
     # -----------------------------------------------
     api_prefix = "/api/v1"
     app.include_router(health_router, prefix=api_prefix)
+    app.include_router(risk_router, prefix=api_prefix + "/risk", tags=["risk"])
 
     # Routers will be added incrementally in later phases:
     # app.include_router(transactions_router, prefix=api_prefix)
