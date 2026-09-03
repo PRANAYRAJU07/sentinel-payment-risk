@@ -7,12 +7,10 @@ Tests that require the dataset are marked: @pytest.mark.requires_dataset
 Run all: pytest ml/tests/
 Run without dataset: pytest ml/tests/ -m "not requires_dataset"
 """
+
 import json
-import os
 import sys
-import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -21,24 +19,22 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from ml.src.ingestion.dataset_registry import (
-    PRIMARY_DATASET,
     ACTIVE_DATASET,
-    KAGGLE_HANDLE,
+    AMOUNT_COLUMN,
     EXPECTED_COLUMN_COUNT,
     EXPECTED_TARGET_COLUMN,
-    PCA_FEATURE_COLUMNS,
-    TARGET_COLUMN,
-    TIME_COLUMN,
-    AMOUNT_COLUMN,
     FRAUD_LABEL,
     LEGITIMATE_LABEL,
+    PCA_FEATURE_COLUMNS,
+    PRIMARY_DATASET,
+    TIME_COLUMN,
 )
-from ml.src.ingestion.validate_dataset import DatasetValidator, EXPECTED_COLUMNS
-
+from ml.src.ingestion.validate_dataset import EXPECTED_COLUMNS, DatasetValidator
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Dataset Registry Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestDatasetRegistry:
     """Tests for dataset_registry.py — no download required."""
@@ -95,6 +91,7 @@ class TestDatasetRegistry:
 # Validator Unit Tests (with synthetic DataFrame)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestDatasetValidatorUnit:
     """
     Tests DatasetValidator logic using synthetic DataFrames.
@@ -104,8 +101,8 @@ class TestDatasetValidatorUnit:
     @pytest.fixture
     def synthetic_df(self):
         """Create a minimal synthetic DataFrame matching creditcard schema."""
-        import pandas as pd
         import numpy as np
+        import pandas as pd
 
         n = 1000
         n_fraud = 5
@@ -151,7 +148,6 @@ class TestDatasetValidatorUnit:
     def test_validator_detects_missing_values(self, tmp_path):
         """Validator should detect and report missing values."""
         import pandas as pd
-        import numpy as np
 
         data = {col: [None, 1.0, 2.0] for col in EXPECTED_COLUMNS}
         df = pd.DataFrame(data)
@@ -166,7 +162,6 @@ class TestDatasetValidatorUnit:
     def test_validator_detects_duplicates(self, tmp_path):
         """Validator must detect duplicate rows."""
         import pandas as pd
-        import numpy as np
 
         n = 100
         data = {TIME_COLUMN: list(range(n)), AMOUNT_COLUMN: [10.0] * n}
@@ -190,9 +185,10 @@ class TestDatasetValidatorUnit:
     def test_validator_fails_for_missing_target_column(self, tmp_path):
         """Validator must fail if target column is missing."""
         import pandas as pd
-        import numpy as np
 
-        data = {col: [1.0, 2.0] for col in EXPECTED_COLUMNS if col != EXPECTED_TARGET_COLUMN}
+        data = {
+            col: [1.0, 2.0] for col in EXPECTED_COLUMNS if col != EXPECTED_TARGET_COLUMN
+        }
         df = pd.DataFrame(data)
         csv = tmp_path / "no_target.csv"
         df.to_csv(csv, index=False)
@@ -212,6 +208,7 @@ class TestDatasetValidatorUnit:
 # Security Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestSecurityConstraints:
     """
     Verify no secrets are accidentally exposed.
@@ -230,7 +227,10 @@ class TestSecurityConstraints:
         script = script_path.read_text(encoding="utf-8")
         # Real tokens are 32-char hex strings assigned to a variable
         import re
-        suspicious = re.findall(r'(?i)(?:key|token|api)\s*=\s*["\']([a-f0-9]{32})["\']', script)
+
+        suspicious = re.findall(
+            r'(?i)(?:key|token|api)\s*=\s*["\']([a-f0-9]{32})["\']', script
+        )
         assert suspicious == [], f"Possible hardcoded token found: {suspicious}"
 
     def test_download_script_reads_from_env(self):
@@ -265,13 +265,17 @@ class TestSecurityConstraints:
         )
         registry = registry_path.read_text(encoding="utf-8")
         import re
-        suspicious = re.findall(r'(?i)(?:key|token|password)\s*=\s*["\']([a-zA-Z0-9]{10,})["\']', registry)
+
+        suspicious = re.findall(
+            r'(?i)(?:key|token|password)\s*=\s*["\']([a-zA-Z0-9]{10,})["\']', registry
+        )
         assert suspicious == [], f"Suspicious credential found: {suspicious}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Integration Tests (require downloaded dataset)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.requires_dataset
 class TestWithRealDataset:
@@ -295,18 +299,21 @@ class TestWithRealDataset:
 
     def test_real_dataset_is_readable(self, real_csv_path):
         import pandas as pd
+
         df = pd.read_csv(real_csv_path, nrows=5)
         assert len(df) == 5
 
     def test_real_dataset_row_count(self, real_csv_path):
         """Must have at least 250,000 rows."""
         import pandas as pd
+
         df = pd.read_csv(real_csv_path)
         assert len(df) >= 250_000, f"Only {len(df):,} rows — dataset incomplete?"
 
     def test_real_dataset_schema(self, real_csv_path):
         """All 31 expected columns must be present."""
         import pandas as pd
+
         df = pd.read_csv(real_csv_path, nrows=1)
         for col in EXPECTED_COLUMNS:
             assert col in df.columns, f"Missing column: {col}"
@@ -314,6 +321,7 @@ class TestWithRealDataset:
     def test_real_dataset_target_values(self, real_csv_path):
         """Target must have exactly 2 unique values: 0 and 1."""
         import pandas as pd
+
         df = pd.read_csv(real_csv_path)
         unique = sorted(df[EXPECTED_TARGET_COLUMN].unique().tolist())
         assert unique == [0, 1]
@@ -321,6 +329,7 @@ class TestWithRealDataset:
     def test_real_dataset_no_all_nan_columns(self, real_csv_path):
         """No column should be entirely NaN."""
         import pandas as pd
+
         df = pd.read_csv(real_csv_path)
         all_nan = [col for col in df.columns if df[col].isna().all()]
         assert all_nan == [], f"All-NaN columns found: {all_nan}"
@@ -328,8 +337,7 @@ class TestWithRealDataset:
     def test_metadata_file_exists(self):
         meta = PROJECT_ROOT / "ml" / "data" / "dataset_metadata.json"
         assert meta.exists(), (
-            f"Metadata not found: {meta}\n"
-            f"Run: python scripts/download_dataset.py"
+            f"Metadata not found: {meta}\n" f"Run: python scripts/download_dataset.py"
         )
 
     def test_metadata_has_required_keys(self):
@@ -338,7 +346,13 @@ class TestWithRealDataset:
             pytest.skip("Metadata not generated yet")
         with open(meta) as f:
             data = json.load(f)
-        for key in ["dataset_name", "handle", "downloaded_at", "dimensions", "target_distribution"]:
+        for key in [
+            "dataset_name",
+            "handle",
+            "downloaded_at",
+            "dimensions",
+            "target_distribution",
+        ]:
             assert key in data, f"Missing key in metadata: {key}"
 
     def test_metadata_no_credentials(self):
@@ -348,6 +362,7 @@ class TestWithRealDataset:
             pytest.skip("Metadata not generated yet")
         content = meta.read_text()
         import re
+
         tokens = re.findall(r"\b[a-f0-9]{32}\b", content)
         # Allow SHA256 checksums (64 chars) but not 32-char API tokens
         assert tokens == [], f"Possible credential in metadata: {tokens[:1]}"

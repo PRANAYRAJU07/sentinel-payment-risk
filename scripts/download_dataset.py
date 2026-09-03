@@ -17,12 +17,13 @@ Security rules:
 
 Dataset: mlg-ulb/creditcardfraud
 """
-import os
-import sys
-import json
+
 import hashlib
+import json
 import logging
+import os
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,6 +32,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from dotenv import load_dotenv
+
 load_dotenv(PROJECT_ROOT / ".env")
 
 logging.basicConfig(
@@ -50,6 +52,7 @@ METADATA_PATH = PROJECT_ROOT / "ml" / "data" / "dataset_metadata.json"
 # ─────────────────────────────────────────────────────────────────────────────
 # Credential verification
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def get_kaggle_credentials() -> tuple[str, str]:
     """
@@ -91,6 +94,7 @@ def get_kaggle_credentials() -> tuple[str, str]:
 # File utilities
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def compute_sha256(filepath: Path, chunk_size: int = 65536) -> str:
     """Compute SHA256 checksum of a file in streaming fashion."""
     sha256 = hashlib.sha256()
@@ -108,6 +112,7 @@ def find_csv_in_dir(directory: Path) -> list[Path]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Download via kagglehub (primary method)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def download_via_kagglehub(username: str, token: str) -> Path:
     """
@@ -136,6 +141,7 @@ def download_via_kagglehub(username: str, token: str) -> Path:
 # Download via kaggle (fallback method)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def download_via_kaggle_api(username: str, token: str) -> None:
     """
     Download dataset using the official kaggle package.
@@ -146,6 +152,7 @@ def download_via_kaggle_api(username: str, token: str) -> None:
 
     try:
         import kaggle  # type: ignore
+
         kaggle.api.authenticate()
     except ImportError:
         raise ImportError("kaggle not installed. Run: pip install kaggle")
@@ -164,6 +171,7 @@ def download_via_kaggle_api(username: str, token: str) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Copy files to project raw dir
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def stage_files(source_dir: Path) -> list[Path]:
     """Copy downloaded CSV files to ml/data/raw/."""
@@ -191,6 +199,7 @@ def stage_files(source_dir: Path) -> list[Path]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Validate dataset
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def validate_and_report(file_path: Path, username: str) -> dict:
     """
@@ -243,7 +252,7 @@ def validate_and_report(file_path: Path, username: str) -> dict:
     fraud_pct = (fraud_count / n_rows) * 100 if n_rows > 0 else 0
     imbalance_ratio = legit_count / fraud_count if fraud_count > 0 else None
 
-    logger.info(f"\n  ── Target Distribution ──")
+    logger.info("\n  ── Target Distribution ──")
     logger.info(f"  Legitimate (0): {legit_count:,}")
     logger.info(f"  Fraud (1):      {fraud_count:,}")
     logger.info(f"  Fraud %:        {fraud_pct:.4f}%")
@@ -252,7 +261,7 @@ def validate_and_report(file_path: Path, username: str) -> dict:
     # Amount statistics
     if "Amount" in df.columns:
         amount_stats = df["Amount"].describe().to_dict()
-        logger.info(f"\n  ── Amount Statistics ──")
+        logger.info("\n  ── Amount Statistics ──")
         logger.info(f"  Min:    {amount_stats['min']:.2f}")
         logger.info(f"  Max:    {amount_stats['max']:.2f}")
         logger.info(f"  Mean:   {amount_stats['mean']:.2f}")
@@ -261,8 +270,10 @@ def validate_and_report(file_path: Path, username: str) -> dict:
     # Time statistics
     if "Time" in df.columns:
         time_span_hours = df["Time"].max() / 3600
-        logger.info(f"\n  ── Temporal Coverage ──")
-        logger.info(f"  Time span: {time_span_hours:.1f} hours ({time_span_hours/24:.1f} days)")
+        logger.info("\n  ── Temporal Coverage ──")
+        logger.info(
+            f"  Time span: {time_span_hours:.1f} hours ({time_span_hours/24:.1f} days)"
+        )
 
     metadata = {
         "dataset_name": "Credit Card Fraud Detection",
@@ -313,6 +324,7 @@ def validate_and_report(file_path: Path, username: str) -> dict:
 # Main entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     logger.info("═" * 55)
     logger.info("  Sentinel — Kaggle Dataset Downloader")
@@ -342,7 +354,7 @@ def main() -> None:
             source_dir = download_via_kagglehub(username, token)
             staged_files = stage_files(source_dir)
             download_success = True
-            logger.info(f"✓ kagglehub download succeeded")
+            logger.info("✓ kagglehub download succeeded")
         except Exception as e:
             logger.warning(f"kagglehub failed: {e}")
             logger.info("Falling back to kaggle API...")
@@ -389,7 +401,9 @@ def main() -> None:
     logger.info(f"  File:       {expected_file.name}")
     logger.info(f"  Rows:       {dims['rows']:,}")
     logger.info(f"  Columns:    {dims['columns']}")
-    logger.info(f"  Fraud:      {dist['fraud_count']:,} ({dist['fraud_percentage']:.4f}%)")
+    logger.info(
+        f"  Fraud:      {dist['fraud_count']:,} ({dist['fraud_percentage']:.4f}%)"
+    )
     logger.info(f"  Legitimate: {dist['legitimate_count']:,}")
     logger.info(f"  Imbalance:  {dist['imbalance_ratio']}:1")
     logger.info("═" * 55)

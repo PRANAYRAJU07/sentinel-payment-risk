@@ -14,13 +14,12 @@ Output:
     ml/reports/data_profile.html   — human-readable summary (if ydata-profiling available)
     ml/reports/figures/            — visualization plots
 """
+
 import json
 import logging
-import sys
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 warnings.filterwarnings("ignore")
 logger = logging.getLogger(__name__)
@@ -40,15 +39,14 @@ PCA_COLS = [f"V{i}" for i in range(1, 29)]
 FEATURE_COLS = PCA_COLS + [AMOUNT_COL]
 
 
-def load_dataset(path: Optional[Path] = None) -> "pd.DataFrame":
+def load_dataset(path: Path | None = None) -> "pd.DataFrame":
     """Load dataset. Raises clear error if file doesn't exist."""
     import pandas as pd
 
     p = path or PRIMARY_FILE
     if not p.exists():
         raise FileNotFoundError(
-            f"Dataset not found: {p}\n"
-            f"Run: python scripts/download_dataset.py"
+            f"Dataset not found: {p}\n" f"Run: python scripts/download_dataset.py"
         )
     logger.info(f"Loading dataset from: {p}")
     df = pd.read_csv(p)
@@ -59,6 +57,7 @@ def load_dataset(path: Optional[Path] = None) -> "pd.DataFrame":
 # ─────────────────────────────────────────────────────────────────────────────
 # Profile computation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def compute_basic_profile(df: "pd.DataFrame") -> dict:
     """Compute shape, types, missing values, duplicates."""
@@ -115,7 +114,6 @@ def compute_target_profile(df: "pd.DataFrame") -> dict:
 
 def compute_numerical_stats(df: "pd.DataFrame") -> dict:
     """Compute per-column statistics for numerical features."""
-    import numpy as np
 
     stats = {}
     numeric_cols = [TIME_COL, AMOUNT_COL] + PCA_COLS
@@ -177,7 +175,9 @@ def compute_temporal_profile(df: "pd.DataFrame") -> dict:
 
     fraud_per_hour = (
         df_copy[df_copy[TARGET_COL] == 1]["hour_of_day"]
-        .value_counts().sort_index().to_dict()
+        .value_counts()
+        .sort_index()
+        .to_dict()
     )
     fraud_per_hour = {int(k): int(v) for k, v in fraud_per_hour.items()}
 
@@ -301,6 +301,7 @@ def compute_leakage_assessment() -> dict:
 # Visualization
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def generate_plots(df: "pd.DataFrame") -> list[str]:
     """
     Generate profiling plots and save to ml/reports/figures/.
@@ -308,11 +309,12 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
     """
     try:
         import matplotlib
+
         matplotlib.use("Agg")  # non-interactive backend
-        import matplotlib.pyplot as plt
         import matplotlib.patches as mpatches
-        import seaborn as sns
+        import matplotlib.pyplot as plt
         import numpy as np
+        import seaborn as sns
     except ImportError:
         logger.warning("matplotlib/seaborn not installed — skipping plots")
         return []
@@ -328,23 +330,46 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
     fig, ax = plt.subplots(figsize=(7, 5))
     counts = df[TARGET_COL].value_counts().sort_index()
     labels = ["Legitimate (0)", "Fraud (1)"]
-    bars = ax.bar(labels, counts.values,
-                  color=[COLORS["legit"], COLORS["fraud"]],
-                  edgecolor="white", linewidth=1.5)
+    bars = ax.bar(
+        labels,
+        counts.values,
+        color=[COLORS["legit"], COLORS["fraud"]],
+        edgecolor="white",
+        linewidth=1.5,
+    )
     for bar, val in zip(bars, counts.values):
-        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 500,
-                f"{val:,}", ha="center", va="bottom", fontsize=11, fontweight="bold")
-    ax.set_title("Class Distribution (Fraud vs Legitimate)",
-                 fontsize=14, fontweight="bold", pad=15)
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 500,
+            f"{val:,}",
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            fontweight="bold",
+        )
+    ax.set_title(
+        "Class Distribution (Fraud vs Legitimate)",
+        fontsize=14,
+        fontweight="bold",
+        pad=15,
+    )
     ax.set_ylabel("Transaction Count")
     ax.set_xlabel("Class")
     ax.yaxis.set_major_formatter(
         matplotlib.ticker.FuncFormatter(lambda x, _: f"{x:,.0f}")
     )
     note = f"Fraud: {counts.get(1, 0):,} ({counts.get(1, 0)/len(df)*100:.3f}%)"
-    ax.text(0.98, 0.95, note, transform=ax.transAxes, ha="right", va="top",
-            fontsize=9, color="#e74c3c",
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8))
+    ax.text(
+        0.98,
+        0.95,
+        note,
+        transform=ax.transAxes,
+        ha="right",
+        va="top",
+        fontsize=9,
+        color="#e74c3c",
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+    )
     plt.tight_layout()
     p = FIGURES_DIR / "01_class_distribution.png"
     plt.savefig(p, dpi=150, bbox_inches="tight")
@@ -358,20 +383,36 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
     legit_amounts = df[df[TARGET_COL] == 0][AMOUNT_COL]
 
     for ax, amounts, label, color, title in [
-        (axes[0], legit_amounts, "Legitimate", COLORS["legit"], "Legitimate Transactions"),
+        (
+            axes[0],
+            legit_amounts,
+            "Legitimate",
+            COLORS["legit"],
+            "Legitimate Transactions",
+        ),
         (axes[1], fraud_amounts, "Fraud", COLORS["fraud"], "Fraudulent Transactions"),
     ]:
-        ax.hist(amounts, bins=80, color=color, alpha=0.8, edgecolor="white", linewidth=0.3)
+        ax.hist(
+            amounts, bins=80, color=color, alpha=0.8, edgecolor="white", linewidth=0.3
+        )
         ax.set_yscale("log")
         ax.set_title(title, fontsize=12, fontweight="bold")
         ax.set_xlabel("Amount (EUR)")
         ax.set_ylabel("Count (log scale)")
-        ax.text(0.98, 0.95,
-                f"Mean: {amounts.mean():.2f}\nMedian: {amounts.median():.2f}\nMax: {amounts.max():.2f}",
-                transform=ax.transAxes, ha="right", va="top", fontsize=9,
-                bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9))
+        ax.text(
+            0.98,
+            0.95,
+            f"Mean: {amounts.mean():.2f}\nMedian: {amounts.median():.2f}\nMax: {amounts.max():.2f}",
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=9,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.9),
+        )
 
-    fig.suptitle("Transaction Amount Distribution by Class", fontsize=14, fontweight="bold")
+    fig.suptitle(
+        "Transaction Amount Distribution by Class", fontsize=14, fontweight="bold"
+    )
     plt.tight_layout()
     p = FIGURES_DIR / "02_amount_distribution.png"
     plt.savefig(p, dpi=150, bbox_inches="tight")
@@ -385,13 +426,20 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
         legit_amounts[legit_amounts <= legit_amounts.quantile(0.99)].values,
         fraud_amounts[fraud_amounts <= fraud_amounts.quantile(0.99)].values,
     ]
-    bp = ax.boxplot(data_to_plot, patch_artist=True, widths=0.5,
-                    medianprops=dict(color="black", linewidth=2))
+    bp = ax.boxplot(
+        data_to_plot,
+        patch_artist=True,
+        widths=0.5,
+        medianprops=dict(color="black", linewidth=2),
+    )
     bp["boxes"][0].set_facecolor(COLORS["legit"])
     bp["boxes"][1].set_facecolor(COLORS["fraud"])
     ax.set_xticklabels(["Legitimate", "Fraud"])
-    ax.set_title("Transaction Amount: Fraud vs Legitimate\n(99th percentile capped)",
-                 fontsize=12, fontweight="bold")
+    ax.set_title(
+        "Transaction Amount: Fraud vs Legitimate\n(99th percentile capped)",
+        fontsize=12,
+        fontweight="bold",
+    )
     ax.set_ylabel("Amount (EUR)")
     plt.tight_layout()
     p = FIGURES_DIR / "03_amount_boxplot.png"
@@ -411,16 +459,26 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
         fraud_time = df_temp[df_temp[TARGET_COL] == 1].groupby("hour_bucket").size()
 
         ax = axes[0]
-        ax.fill_between(legit_time.index, legit_time.values,
-                        alpha=0.6, color=COLORS["legit"], label="Legitimate")
+        ax.fill_between(
+            legit_time.index,
+            legit_time.values,
+            alpha=0.6,
+            color=COLORS["legit"],
+            label="Legitimate",
+        )
         ax.set_title("Transaction Volume Over Time", fontsize=12, fontweight="bold")
         ax.set_xlabel("Hour")
         ax.set_ylabel("Transaction Count")
         ax.legend()
 
         ax = axes[1]
-        ax.bar(fraud_time.index, fraud_time.values,
-               color=COLORS["fraud"], alpha=0.8, label="Fraud")
+        ax.bar(
+            fraud_time.index,
+            fraud_time.values,
+            color=COLORS["fraud"],
+            alpha=0.8,
+            label="Fraud",
+        )
         ax.set_title("Fraud Transactions Over Time", fontsize=12, fontweight="bold")
         ax.set_xlabel("Hour")
         ax.set_ylabel("Fraud Count")
@@ -436,7 +494,8 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
     # ── 5. Feature Correlation with Target ───────────────────────────────────
     corr_values = {
         col: float(df[col].corr(df[TARGET_COL]))
-        for col in FEATURE_COLS if col in df.columns
+        for col in FEATURE_COLS
+        if col in df.columns
     }
     sorted_corr = sorted(corr_values.items(), key=lambda x: abs(x[1]), reverse=True)
     top20 = sorted_corr[:20]
@@ -446,8 +505,11 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
     colors = [COLORS["fraud"] if v < 0 else COLORS["legit"] for v in vals]
     ax.barh(list(cols), list(vals), color=colors)
     ax.axvline(0, color="black", linewidth=0.8)
-    ax.set_title("Top 20 Feature Correlations with Target (Class)",
-                 fontsize=12, fontweight="bold")
+    ax.set_title(
+        "Top 20 Feature Correlations with Target (Class)",
+        fontsize=12,
+        fontweight="bold",
+    )
     ax.set_xlabel("Pearson Correlation with Class")
     fraud_patch = mpatches.Patch(color=COLORS["fraud"], label="Negative correlation")
     legit_patch = mpatches.Patch(color=COLORS["legit"], label="Positive correlation")
@@ -469,15 +531,30 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
             ax = axes[i]
             fraud_vals = df[df[TARGET_COL] == 1][col]
             legit_vals = df[df[TARGET_COL] == 0][col]
-            ax.hist(legit_vals, bins=80, color=COLORS["legit"], alpha=0.5,
-                    density=True, label="Legitimate")
-            ax.hist(fraud_vals, bins=80, color=COLORS["fraud"], alpha=0.5,
-                    density=True, label="Fraud")
+            ax.hist(
+                legit_vals,
+                bins=80,
+                color=COLORS["legit"],
+                alpha=0.5,
+                density=True,
+                label="Legitimate",
+            )
+            ax.hist(
+                fraud_vals,
+                bins=80,
+                color=COLORS["fraud"],
+                alpha=0.5,
+                density=True,
+                label="Fraud",
+            )
             ax.set_title(f"{col} Distribution", fontsize=11, fontweight="bold")
             ax.set_ylabel("Density")
             ax.legend(fontsize=8)
-        fig.suptitle("Top PCA Feature Distributions: Fraud vs Legitimate",
-                     fontsize=13, fontweight="bold")
+        fig.suptitle(
+            "Top PCA Feature Distributions: Fraud vs Legitimate",
+            fontsize=13,
+            fontweight="bold",
+        )
         plt.tight_layout()
         p = FIGURES_DIR / "06_pca_feature_distributions.png"
         plt.savefig(p, dpi=150, bbox_inches="tight")
@@ -492,10 +569,12 @@ def generate_plots(df: "pd.DataFrame") -> list[str]:
 # Optional: ydata-profiling HTML report
 # ─────────────────────────────────────────────────────────────────────────────
 
-def generate_html_profile(df: "pd.DataFrame") -> Optional[str]:
+
+def generate_html_profile(df: "pd.DataFrame") -> str | None:
     """Generate full HTML profiling report using ydata-profiling (if installed)."""
     try:
         from ydata_profiling import ProfileReport
+
         logger.info("Generating ydata-profiling HTML report (may take 1-2 minutes)...")
         profile = ProfileReport(
             df,
@@ -520,7 +599,8 @@ def generate_html_profile(df: "pd.DataFrame") -> Optional[str]:
 # Main profiler
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_profiling(csv_path: Optional[Path] = None, skip_html: bool = False) -> dict:
+
+def run_profiling(csv_path: Path | None = None, skip_html: bool = False) -> dict:
     """
     Run full profiling pipeline.
     Returns the complete profile as a dict.

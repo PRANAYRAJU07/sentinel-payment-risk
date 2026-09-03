@@ -4,6 +4,7 @@ Sentinel ML — Phase 4: Data Profiling Tests
 Tests for the dataset profiler.
 Unit tests use synthetic DataFrames (no download required).
 """
+
 import json
 import sys
 from pathlib import Path
@@ -14,27 +15,27 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from ml.src.ingestion.dataset_registry import (
-    PCA_FEATURE_COLUMNS,
-    EXPECTED_TARGET_COLUMN,
-    TIME_COLUMN,
     AMOUNT_COLUMN,
+    EXPECTED_TARGET_COLUMN,
+    PCA_FEATURE_COLUMNS,
+    TIME_COLUMN,
 )
 from ml.src.ingestion.profile_dataset import (
     compute_basic_profile,
-    compute_target_profile,
-    compute_numerical_stats,
-    compute_temporal_profile,
     compute_correlation_with_target,
-    compute_outlier_summary,
     compute_leakage_assessment,
+    compute_numerical_stats,
+    compute_outlier_summary,
+    compute_target_profile,
+    compute_temporal_profile,
 )
 
 
 @pytest.fixture
 def synthetic_df():
     """Minimal synthetic DataFrame with correct schema."""
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 
     n = 500
     n_fraud = 3
@@ -279,6 +280,7 @@ class TestProfilingWithRealDataset:
 
     def test_profile_runs_on_real_data(self, real_csv, tmp_path):
         import ml.src.ingestion.profile_dataset as profiler
+
         original_reports = profiler.REPORTS_DIR
         original_figures = profiler.FIGURES_DIR
         try:

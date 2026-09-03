@@ -13,11 +13,11 @@ This module:
 Usage:
     python ml/src/ingestion/validate_dataset.py
 """
+
 import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +42,14 @@ FRAUD_LABEL = 1
 LEGITIMATE_LABEL = 0
 
 # ── Reasonable sanity bounds (not fabricated, conservative) ──────────────────
-MIN_EXPECTED_ROWS = 250_000       # dataset has ~284k rows
-MIN_EXPECTED_FRAUD_COUNT = 400    # dataset has ~492 fraud cases
+MIN_EXPECTED_ROWS = 250_000  # dataset has ~284k rows
+MIN_EXPECTED_FRAUD_COUNT = 400  # dataset has ~492 fraud cases
 MAX_EXPECTED_FRAUD_PERCENTAGE = 5.0  # fraud is <1% in reality
 
 
 class DatasetValidationError(Exception):
     """Raised when the dataset fails validation."""
-    pass
+
 
 
 class DatasetValidator:
@@ -58,7 +58,7 @@ class DatasetValidator:
     All validation is based on actual file contents.
     """
 
-    def __init__(self, csv_path: Optional[Path] = None):
+    def __init__(self, csv_path: Path | None = None):
         self.csv_path = csv_path or PRIMARY_FILE
         self._df = None
         self.results: dict = {}
@@ -95,6 +95,7 @@ class DatasetValidator:
         """Load the CSV into a DataFrame."""
         try:
             import pandas as pd
+
             self._df = pd.read_csv(self.csv_path)
             self.results["loaded"] = True
             return True
@@ -258,7 +259,8 @@ class DatasetValidator:
             return False
 
         all_nan_cols = [
-            col for col in EXPECTED_PCA_COLUMNS
+            col
+            for col in EXPECTED_PCA_COLUMNS
             if col in self._df.columns and self._df[col].isna().all()
         ]
         self.results["all_nan_columns"] = all_nan_cols
@@ -302,7 +304,9 @@ class DatasetValidator:
         if critical_pass:
             logger.info("  ✓ Dataset validation PASSED")
             logger.info(f"  Rows: {self.results.get('row_count', 'N/A'):,}")
-            logger.info(f"  Fraud: {dist.get('fraud', 'N/A'):,} ({dist.get('fraud_percentage', 'N/A'):.4f}%)")
+            logger.info(
+                f"  Fraud: {dist.get('fraud', 'N/A'):,} ({dist.get('fraud_percentage', 'N/A'):.4f}%)"
+            )
             logger.info(f"  Imbalance ratio: {dist.get('imbalance_ratio', 'N/A')}:1")
         else:
             logger.error("  ✗ Dataset validation FAILED")
@@ -315,6 +319,7 @@ class DatasetValidator:
 
 
 # ── Standalone runner ─────────────────────────────────────────────────────────
+
 
 def main() -> None:
     logging.basicConfig(

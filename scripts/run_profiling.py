@@ -15,8 +15,9 @@ Output:
     ml/reports/data_profile.html  (if ydata-profiling installed)
     ml/reports/figures/*.png
 """
-import sys
+
 import logging
+import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

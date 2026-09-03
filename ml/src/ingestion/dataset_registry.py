@@ -8,17 +8,18 @@ IMPORTANT:
 - Never store actual data in this file.
 - Download with: python scripts/download_dataset.py
 """
-from dataclasses import dataclass, field
-from typing import List
+
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class DatasetConfig:
     """Configuration for a Kaggle dataset."""
+
     dataset_name: str
-    kaggle_handle: str        # Format: "owner/dataset-name"
+    kaggle_handle: str  # Format: "owner/dataset-name"
     version: int
-    expected_files: List[str]
+    expected_files: list[str]
     target_column: str
     description: str
     license_note: str
