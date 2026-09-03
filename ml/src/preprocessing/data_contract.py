@@ -8,13 +8,11 @@ INPUT: Raw Kaggle transaction dataframe.
 OUTPUT: Validated dataframe (or raises DataContractError).
 """
 
-
 import pandas as pd
 
 
 class DataContractError(Exception):
     """Raised when data fails to meet the contract requirements."""
-
 
 
 class DataContract:

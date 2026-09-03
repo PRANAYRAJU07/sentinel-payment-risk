@@ -51,7 +51,6 @@ class DatasetValidationError(Exception):
     """Raised when the dataset fails validation."""
 
 
-
 class DatasetValidator:
     """
     Validates the Credit Card Fraud Detection dataset.
