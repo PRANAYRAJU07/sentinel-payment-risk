@@ -85,8 +85,10 @@ class RiskEngineOrchestrator:
         # 3. Rule Signal
         rule_res = self.rule_engine.evaluate(transaction)
 
-        # 4. Graph Signal
-        graph_res = self.graph_engine.evaluate(transaction)
+        # 4. Graph Signal (NetworkX Engine)
+        from app.graph.graph_service import GraphService
+        graph_service = GraphService()
+        graph_res = await graph_service.get_graph_signal(transaction, db)
 
         # 5. Aggregation
         final_score = self._aggregate_scores(ml_res, beh_res, rule_res, graph_res)

@@ -1,77 +1,42 @@
+version: '3.8'
+
 services:
-  # -----------------------------------------------
-  # PostgreSQL Database
-  # -----------------------------------------------
-  postgres:
-    image: postgres:16-alpine
-    container_name: sentinel_postgres
+  db:
+    image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-sentinel}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentinel_password}
-      POSTGRES_DB: ${POSTGRES_DB:-sentinel_db}
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinelpassword
+      POSTGRES_DB: sentinel
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentinel}"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U sentinel"]
+      interval: 5s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
-  # -----------------------------------------------
-  # Backend — FastAPI
-  # -----------------------------------------------
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: sentinel_backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-sentinel}:${POSTGRES_PASSWORD:-sentinel_password}@postgres:5432/${POSTGRES_DB:-sentinel_db}
-      - APP_ENV=${APP_ENV:-development}
-      - APP_DEBUG=${APP_DEBUG:-true}
-      - DEMO_MODE=${DEMO_MODE:-false}
-      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-}
-      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-}
-      - LLM_API_KEY=${LLM_API_KEY:-}
-      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
-      - JWT_SECRET=${JWT_SECRET:-changeme_in_production}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173}
-      - RISK_LOW_THRESHOLD=${RISK_LOW_THRESHOLD:-40}
-      - RISK_HIGH_THRESHOLD=${RISK_HIGH_THRESHOLD:-75}
+      - DATABASE_URL=postgresql+asyncpg://sentinel:sentinelpassword@db:5432/sentinel
     ports:
       - "8000:8000"
-    volumes:
-      - ./ml/models:/app/ml_models:ro
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
-    restart: unless-stopped
+    command: >
+      sh -c "alembic upgrade head && python scripts/seed_demo.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-  # -----------------------------------------------
-  # Frontend — React + Vite
-  # -----------------------------------------------
   frontend:
     build:
-      context: ./frontend
+      context: ./frontend_app
       dockerfile: Dockerfile
-    container_name: sentinel_frontend
-    environment:
-      - VITE_API_URL=http://localhost:8000
-      - VITE_DEMO_MODE=${DEMO_MODE:-false}
     ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-    restart: unless-stopped
+      - "3000:80"
 
 volumes:
   postgres_data:
-    driver: local
-
-networks:
-  default:
-    name: sentinel_network
